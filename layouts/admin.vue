@@ -11,6 +11,7 @@
           <li><a href="/admin/dashboard" class="hover:underline">Inicio</a></li>
           <li><a href="/querys" class="hover:underline">Querys Complejas</a></li>
           <li><a href="/admin/spatial-queries" class="hover:underline">Querys Geoespaciales</a></li>
+          <li><a href="/nosqlQueries" class="hover:underline">Querys No SQL</a></li>
           <li><a href="/companies-food-volume" class="hover:underline">Vol. Comida</a></li>
           <li><a href="/clients" class="hover:underline">Clientes</a></li>
           <li><a href="/orders" class="hover:underline">Todas las órdenes</a></li>

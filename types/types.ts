@@ -183,3 +183,10 @@ export interface CartTrackingData {
   itemsCleared?: number
   lastProduct?: { id: number; name: string }
 }
+
+export interface AverageRatingWithNameProjection {
+  _id: string;
+  companyId: string;
+  companyName: string;
+  averageRating: number;
+}
