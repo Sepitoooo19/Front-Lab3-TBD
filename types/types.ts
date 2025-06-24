@@ -151,3 +151,35 @@ export interface DealerWithDistance extends Dealer {
   distanceMeters: number;
   distanceFormatted: string;
 }
+
+export type UserNavigationEvent = 
+  | 'view_products'
+  | 'add_to_cart'
+  | 'remove_from_cart'
+  | 'view_cart'
+  | 'checkout_start'
+  | 'checkout_complete'
+
+
+export interface UserNavigationDocument {
+  clientId: number
+  eventType: UserNavigationEvent
+  metadata?: Record<string, any>
+  timestamp: string
+}
+
+export type CartTrackingEvent =
+  | 'add_to_cart'
+  | 'remove_from_cart'
+  | 'cart_cleared'
+  | 'cart_restored'
+  | 'view_cart'
+  | 'checkout_started'
+
+export interface CartTrackingData {
+  productId?: number
+  productName?: string
+  currentCartSize: number
+  itemsCleared?: number
+  lastProduct?: { id: number; name: string }
+}

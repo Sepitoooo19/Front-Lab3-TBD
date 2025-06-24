@@ -1,5 +1,4 @@
 <!-- Productos de la empresa por id para el cliente -->
-
 <script setup lang="ts">
 // Importa las dependencias necesarias
 import { ref, onMounted } from 'vue';
@@ -7,48 +6,77 @@ import { useRoute } from 'vue-router';
 import { getProductsByCompanyId } from '~/services/productService';
 import { getCompanyById } from '~/services/companyService';
 import { useCartStore } from '~/stores/cart';
-import type { Product, Company } from '~/types/types'; // Importa el tipo Product
+import { trackClientNavigation } from '~/services/trackingService';
+import type { Product, Company } from '~/types/types';
 
 // Define las variables reactivas
 const route = useRoute();
-const companyId = Number(route.params.id); // Convierte el ID de la empresa a un número
-const products = ref<Product[]>([]); // Lista de productos
-const company = ref<Company | null>(null); // Permite que inicialmente sea null
+const companyId = Number(route.params.id);
+const products = ref<Product[]>([]);
+const company = ref<Company | null>(null);
 const cartStore = useCartStore();
 cartStore.loadFromLocalStorage();
 
 // Handle para agregar productos al carrito
-// Metodo: addProduct
-// Entrada: product (producto a agregar)
-// Salida: cartStore (almacena el producto en el carrito)
-const handleAddToCart = (product: Product) => {
-  cartStore.addProduct({
-    id: product.id,
-    name: product.name,
-    price: product.price, // Asegúrate de que `product.price` tenga un valor válido
-  });
-  console.log('Producto agregado al carrito:', product);
+const handleAddToCart = async (product: Product) => {
+  try {
+    await cartStore.addProduct({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+    });
+    
+    // Tracking con nuevo formato
+    await trackClientNavigation({
+      eventType: 'add_to_cart',
+      metadata: {
+        productId: product.id,
+        productName: product.name,
+        companyId: companyId
+      }
+    });
+    
+    console.log('Producto agregado al carrito:', product);
+  } catch (error) {
+    console.error('Error al agregar producto:', error);
+  }
 };
 
-// Obtén los productos y la empresa al montar el componente
-// Metodo: getProductsByCompanyId
-// Entrada: companyId (ID de la empresa)
-// Salida: products (Lista de productos) y company (Datos de la empresa)
+// Carga inicial de productos
 onMounted(async () => {
   try {
+    // Tracking con nuevo formato
+    await trackClientNavigation({
+      eventType: 'view_products',
+      metadata: {
+        companyId: companyId,
+        category: route.query.category?.toString() || 'general'
+      }
+    });
+    
+    // Carga de productos
     products.value = await getProductsByCompanyId(companyId);
-    console.log('Productos cargados:', products.value);
+    company.value = await getCompanyById(companyId);
+    
   } catch (err) {
-    console.error('Error al cargar los productos:', err);
+    console.error('Error al cargar datos:', err);
+    
+    // Tracking de error
+    await trackClientNavigation({
+      eventType: 'product_load_error',
+      metadata: {
+        companyId: companyId,
+        error: err instanceof Error ? err.message : 'Error desconocido'
+      }
+    });
   }
 });
 
 definePageMeta({
-  layout: 'client', // Usa el layout de cliente
+  layout: 'client',
 });
 </script>
 
-<!-- Este template muestra una tabla con los productos de la empresa y un botón para agregarlos al carrito -->
 <template>
   <div>
     <!-- Título dinámico basado en el nombre de la empresa -->

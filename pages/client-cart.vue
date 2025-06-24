@@ -1,5 +1,4 @@
 <!-- Page para el carrito del cliente -->
-
 <script setup lang="ts">
 // Importaciones necesarias
 import { ref, computed, onMounted } from 'vue';
@@ -9,6 +8,7 @@ import { createOrderDetailsForLastOrder } from '~/services/orderDetailsService';
 import { getCompanyIdByProductId } from '~/services/productService';
 import { getPaymentMethodByCompanyId } from '~/services/paymentMethodService';
 import { getAuthenticatedClientProfile, updateClientProfile } from '~/services/clientService';
+import { trackClientNavigation } from '~/services/trackingService';
 import { wktToLatLng, latLngToWKT } from '~/utils/wktUtils';
 import MapPicker from '~/components/common/MapPicker.vue';
 import type { PaymentMethod } from '~/types/types';
@@ -19,9 +19,9 @@ cartStore.loadFromLocalStorage();
 
 // Const reactivos
 const cartProducts = computed(() => cartStore.products);
-const paymentMethods = ref<PaymentMethod[]>([]); // Lista de métodos de pago
-const selectedPaymentMethod = ref<string | null>(null); // Método de pago seleccionado
-const isUrgent = ref<boolean>(false); // Estado para marcar como URGENTE
+const paymentMethods = ref<PaymentMethod[]>([]);
+const selectedPaymentMethod = ref<string | null>(null);
+const isUrgent = ref<boolean>(false);
 const errorMessage = ref<string | null>(null);
 
 // --- Ubicación del cliente ---
@@ -30,6 +30,15 @@ const lng = ref<number | null>(null);
 const isLoadingUbicacion = ref(true);
 
 onMounted(async () => {
+  // Tracking de visualización del carrito
+  await trackClientNavigation({
+    eventType: 'view_cart',
+    metadata: {
+      itemCount: cartProducts.value.length,
+      totalValue: cartProducts.value.reduce((sum, p) => sum + p.price, 0)
+    }
+  });
+
   // Métodos de pago
   try {
     if (cartProducts.value.length === 0) {
@@ -45,6 +54,14 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error al cargar los métodos de pago:', error);
     errorMessage.value = 'Hubo un error al cargar los métodos de pago.';
+    
+    // Tracking de error
+    await trackClientNavigation({
+      eventType: 'payment_methods_load_error',
+      metadata: {
+        error: error.message
+      }
+    });
   }
 
   // Ubicación del cliente
@@ -86,15 +103,48 @@ const actualizarUbicacion = async () => {
       phone: profile.phone,
       ubication: latLngToWKT(lng.value, lat.value)
     });
+    
+    // Tracking de actualización de ubicación
+    await trackClientNavigation({
+      eventType: 'location_updated',
+      metadata: {
+        lat: lat.value,
+        lng: lng.value
+      }
+    });
+    
     alert('Ubicación actualizada correctamente');
   } catch (e) {
+    console.error('Error al actualizar ubicación:', e);
+    
+    // Tracking de error
+    await trackClientNavigation({
+      eventType: 'location_update_error',
+      metadata: {
+        error: e instanceof Error ? e.message : 'Error desconocido'
+      }
+    });
+    
     alert('Error al actualizar la ubicación');
   }
 };
 
 // Función para eliminar un producto del carrito
-const removeFromCart = (productId: number) => {
-  cartStore.removeProduct(productId);
+const removeFromCart = async (productId: number) => {
+  try {
+    await cartStore.removeProduct(productId);
+  } catch (error) {
+    console.error('Error al eliminar producto:', error);
+    
+    // Tracking de error
+    await trackClientNavigation({
+      eventType: 'remove_from_cart_error',
+      metadata: {
+        productId,
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      }
+    });
+  }
 };
 
 // Función para crear la orden y los detalles
@@ -105,11 +155,22 @@ const createOrder = async () => {
       return;
     }
 
+    // Tracking de inicio de checkout
+    await trackClientNavigation({
+      eventType: 'checkout_started',
+      metadata: {
+        itemCount: cartProducts.value.length,
+        totalAmount: cartProducts.value.reduce((sum, p) => sum + p.price, 0),
+        paymentMethod: selectedPaymentMethod.value,
+        isUrgent: isUrgent.value
+      }
+    });
+
     // Crear la orden
     const productIds = cartStore.products.map((product) => product.id).join(',');
     const order = {
       orderDate: new Date().toISOString(),
-      status: isUrgent.value ? "URGENTE" : "PENDIENTE", // Cambia el estado según el checkbox
+      status: isUrgent.value ? "URGENTE" : "PENDIENTE",
     };
 
     await createOrderService(order, productIds);
@@ -117,20 +178,41 @@ const createOrder = async () => {
     // Crear el detalle de la orden
     const totalProducts = cartProducts.value.length;
     const price = cartProducts.value.reduce((sum, product) => sum + product.price, 0);
-    const paymentMethod = selectedPaymentMethod.value; // Asigna el método de pago seleccionado
+    const paymentMethod = selectedPaymentMethod.value;
 
     await createOrderDetailsForLastOrder(paymentMethod, totalProducts, price);
 
+    // Tracking de orden confirmada
+    await trackClientNavigation({
+      eventType: 'order_confirmed',
+      metadata: {
+        orderItems: totalProducts,
+        totalAmount: price,
+        paymentMethod,
+        isUrgent: isUrgent.value
+      }
+    });
+
     alert('Pedido y detalles creados exitosamente.');
-    cartStore.clearCart();
+    await cartStore.clearCart();
   } catch (error) {
     console.error('Error al crear la orden o los detalles:', error);
+    
+    // Tracking de error en la orden
+    await trackClientNavigation({
+      eventType: 'order_failed',
+      metadata: {
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        itemCount: cartProducts.value.length
+      }
+    });
+    
     alert('Hubo un error al confirmar el pedido.');
   }
 };
 
 definePageMeta({
-  layout: 'client', // Usa el layout de cliente
+  layout: 'client',
 });
 </script>
 
