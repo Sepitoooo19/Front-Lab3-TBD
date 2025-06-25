@@ -213,3 +213,17 @@ export interface DealerFrequentLocation {
   location: number[]; // [longitude, latitude]
   count: number;
 }
+
+export interface ClientNavigationDocument {
+  id: string;
+  clientId: number;
+  eventType: string;
+  metadata: Record<string, any>;
+  timestamp: string;
+}
+
+export interface ReviewHourStats {
+  _id: number;       // hora del día (0 a 23)
+  count: number;
+  avgRating: number;
+}

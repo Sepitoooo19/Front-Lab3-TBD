@@ -2,8 +2,8 @@
 <script setup lang="ts">
 // Importaciones necesarias
 import { ref } from 'vue';
-import { getAverageRatingWithCompanyName, searchCustomerReviewsByKeywords, getOrdersWithRapidChanges, getDealerFrequentLocations    } from '~/services/noSqlService';
-import type { AverageRatingWithNameProjection, CustomerReviewDocument, RapidChangeOrderDTO, DealerFrequentLocation   } from '~/types/types';
+import { getAverageRatingWithCompanyName, searchCustomerReviewsByKeywords, getOrdersWithRapidChanges, getDealerFrequentLocations, getNonOrderNavigationEvents, getReviewStatsByHour} from '~/services/noSqlService';
+import type { AverageRatingWithNameProjection, CustomerReviewDocument, RapidChangeOrderDTO, DealerFrequentLocation, ClientNavigationDocument, ReviewHourStats    } from '~/types/types';
 
 // Datos reactivos
 const averageRatings = ref<AverageRatingWithNameProjection[]>([]);
@@ -22,6 +22,14 @@ const rapidChangesError = ref<string | null>(null);
 const frequentLocations = ref<DealerFrequentLocation[]>([]);
 const loadingFrequentLocations = ref(false);
 const frequentLocationsError = ref<string | null>(null);
+
+const nonOrderActions = ref<ClientNavigationDocument[]>([]);
+const loadingNavigation = ref(false);
+const navigationError = ref<string | null>(null);
+
+const hourlyStats = ref<ReviewHourStats[]>([]);
+const loadingHourlyStats = ref(false);
+const hourlyStatsError = ref<string | null>(null);
 
 
 // Función para obtener los promedios de puntuación
@@ -82,6 +90,32 @@ const fetchFrequentLocations = async () => {
     frequentLocationsError.value = 'Hubo un error al cargar las ubicaciones frecuentes.';
   } finally {
     loadingFrequentLocations.value = false;
+  }
+};
+
+const fetchNonOrderNavigationEvents = async () => {
+  try {
+    loadingNavigation.value = true;
+    navigationError.value = null;
+    nonOrderActions.value = await getNonOrderNavigationEvents();
+  } catch (error) {
+    console.error('Error al obtener navegación sin pedidos:', error);
+    navigationError.value = 'Hubo un error al cargar las acciones de navegación.';
+  } finally {
+    loadingNavigation.value = false;
+  }
+};
+
+const fetchReviewStatsByHour = async () => {
+  try {
+    loadingHourlyStats.value = true;
+    hourlyStatsError.value = null;
+    hourlyStats.value = await getReviewStatsByHour();
+  } catch (error) {
+    console.error('Error al obtener estadísticas horarias:', error);
+    hourlyStatsError.value = 'Hubo un error al cargar los datos por hora.';
+  } finally {
+    loadingHourlyStats.value = false;
   }
 };
 
@@ -270,6 +304,93 @@ definePageMeta({
 
       <div v-else-if="!loadingFrequentLocations">
         <p class="text-gray-500 italic">No se encontraron ubicaciones frecuentes.</p>
+      </div>
+    </div>
+    <!-- Bloque para acciones de navegación que no son de pedidos -->
+    <div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md mb-6">
+      <h2 class="text-xl font-bold mb-2">Acciones de Navegación (Excluye Pedidos)</h2>
+
+      <button 
+        class="bg-sky-600 text-white px-4 py-2 rounded hover:bg-sky-700 mb-4"
+        @click="fetchNonOrderNavigationEvents"
+        :disabled="loadingNavigation"
+      >
+        {{ loadingNavigation ? 'Cargando...' : 'Obtener Navegación' }}
+      </button>
+
+      <div v-if="navigationError" class="text-red-500">{{ navigationError }}</div>
+
+      <div v-if="loadingNavigation" class="text-gray-500">Cargando datos...</div>
+
+      <div v-else-if="nonOrderActions.length > 0" class="overflow-x-auto max-h-96 overflow-y-scroll">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50 sticky top-0">
+            <tr>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Cliente</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Evento</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Fecha</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Metadata</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="(event, index) in nonOrderActions" :key="index">
+              <td class="px-4 py-2">{{ event.clientId }}</td>
+              <td class="px-4 py-2">{{ event.eventType }}</td>
+              <td class="px-4 py-2">{{ new Date(event.timestamp).toLocaleString() }}</td>
+              <td class="px-4 py-2">
+                <pre class="whitespace-pre-wrap break-all text-xs">{{ JSON.stringify(event.metadata, null, 2) }}</pre>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-else-if="!loadingNavigation">
+        <p class="text-gray-500 italic">No se encontraron acciones de navegación excluyendo pedidos.</p>
+      </div>
+    </div>
+    <!-- Bloque para estadísticas de satisfacción por hora -->
+    <div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md mb-6">
+      <h2 class="text-xl font-bold mb-2">Estadísticas de Opiniones por Hora</h2>
+
+      <button 
+        class="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 mb-4"
+        @click="fetchReviewStatsByHour"
+        :disabled="loadingHourlyStats"
+      >
+        {{ loadingHourlyStats ? 'Cargando...' : 'Obtener Estadísticas' }}
+      </button>
+
+      <div v-if="hourlyStatsError" class="text-red-500">{{ hourlyStatsError }}</div>
+
+      <div v-if="loadingHourlyStats" class="text-gray-500">Cargando estadísticas...</div>
+
+      <div v-else-if="hourlyStats.length > 0">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Hora</th>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Cantidad de Opiniones</th>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Promedio de Rating</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="(stat, index) in hourlyStats" :key="index">
+              <td class="px-6 py-2">{{ stat._id }}:00 - {{ stat._id + 1 }}:00</td>
+              <td class="px-6 py-2">{{ stat.count }}</td>
+              <td class="px-6 py-2">
+                <span v-if="typeof stat.avgRating === 'number'">
+                  {{ stat.avgRating.toFixed(2) }}
+                </span>
+                <span v-else class="text-gray-400 italic">N/A</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-else-if="!loadingHourlyStats">
+        <p class="text-gray-500 italic">No se encontraron datos.</p>
       </div>
     </div>
 
