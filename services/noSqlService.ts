@@ -1,4 +1,4 @@
-import type { AverageRatingWithNameProjection, CustomerReviewDocument, RapidChangeOrderDTO  } from '~/types/types';
+import type { AverageRatingWithNameProjection, CustomerReviewDocument, RapidChangeOrderDTO, DealerFrequentLocation  } from '~/types/types';
 
 export const getAverageRatingWithCompanyName = async (): Promise<AverageRatingWithNameProjection[]> => {
   const config = useRuntimeConfig();
@@ -45,6 +45,23 @@ export const getOrdersWithRapidChanges = async (): Promise<RapidChangeOrderDTO[]
 
   if (!response.ok) {
     throw new Error('Error al obtener los pedidos con cambios rápidos');
+  }
+
+  return await response.json();
+};
+
+
+export const getDealerFrequentLocations = async (): Promise<DealerFrequentLocation[]> => {
+  const config = useRuntimeConfig();
+
+  const response = await fetch(`${config.public.apiBase}/documents/dealer-history/frequent-locations`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Error al obtener ubicaciones frecuentes de repartidores');
   }
 
   return await response.json();

@@ -203,7 +203,13 @@ export interface CustomerReviewDocument {
 
 export interface RapidChangeOrderDTO {
   orderId: number;
-  totalChanges: number;
+  changeCount: number;
   firstChange: string; // o Date si haces el parse
   lastChange: string;
+}
+
+export interface DealerFrequentLocation {
+  dealerId: number;
+  location: number[]; // [longitude, latitude]
+  count: number;
 }

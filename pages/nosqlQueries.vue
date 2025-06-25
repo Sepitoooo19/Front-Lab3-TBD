@@ -2,8 +2,8 @@
 <script setup lang="ts">
 // Importaciones necesarias
 import { ref } from 'vue';
-import { getAverageRatingWithCompanyName, searchCustomerReviewsByKeywords, getOrdersWithRapidChanges   } from '~/services/noSqlService';
-import type { AverageRatingWithNameProjection, CustomerReviewDocument, RapidChangeOrderDTO  } from '~/types/types';
+import { getAverageRatingWithCompanyName, searchCustomerReviewsByKeywords, getOrdersWithRapidChanges, getDealerFrequentLocations    } from '~/services/noSqlService';
+import type { AverageRatingWithNameProjection, CustomerReviewDocument, RapidChangeOrderDTO, DealerFrequentLocation   } from '~/types/types';
 
 // Datos reactivos
 const averageRatings = ref<AverageRatingWithNameProjection[]>([]);
@@ -18,6 +18,12 @@ const keywordError = ref<string | null>(null);
 const rapidChangeOrders = ref<RapidChangeOrderDTO[]>([]);
 const loadingRapidChanges = ref(false);
 const rapidChangesError = ref<string | null>(null);
+
+const frequentLocations = ref<DealerFrequentLocation[]>([]);
+const loadingFrequentLocations = ref(false);
+const frequentLocationsError = ref<string | null>(null);
+
+
 // Función para obtener los promedios de puntuación
 const fetchAverageRatings = async () => {
   try {
@@ -50,6 +56,32 @@ const fetchReviewsByKeywords = async () => {
     keywordError.value = 'Hubo un error al buscar las opiniones.';
   } finally {
     loadingKeywords.value = false;
+  }
+};
+
+const fetchRapidChangeOrders = async () => {
+  try {
+    loadingRapidChanges.value = true;
+    rapidChangesError.value = null;
+    rapidChangeOrders.value = await getOrdersWithRapidChanges();
+  } catch (error) {
+    console.error('Error al obtener cambios rápidos:', error);
+    rapidChangesError.value = 'Hubo un error al cargar los pedidos con cambios rápidos.';
+  } finally {
+    loadingRapidChanges.value = false;
+  }
+};
+
+const fetchFrequentLocations = async () => {
+  try {
+    loadingFrequentLocations.value = true;
+    frequentLocationsError.value = null;
+    frequentLocations.value = await getDealerFrequentLocations();
+  } catch (error) {
+    console.error('Error al obtener ubicaciones frecuentes:', error);
+    frequentLocationsError.value = 'Hubo un error al cargar las ubicaciones frecuentes.';
+  } finally {
+    loadingFrequentLocations.value = false;
   }
 };
 
@@ -118,46 +150,129 @@ definePageMeta({
     >
       {{ loading ? 'Cargando...' : 'Obtener Promedios' }}
     </button>
-    <!-- Bloque para búsqueda de opiniones por palabra clave -->
-<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md mb-6">
-  <h2 class="text-xl font-bold mb-2">Buscar Opiniones por Palabra Clave</h2>
+        <!-- Bloque para búsqueda de opiniones por palabra clave -->
+    <div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md mb-6">
+      <h2 class="text-xl font-bold mb-2">Buscar Opiniones por Palabra Clave</h2>
 
-  <div class="flex flex-col sm:flex-row gap-2 mb-4">
-    <input 
-      v-model="keywordInput"
-      type="text"
-      placeholder="Ej: demora error"
-      class="w-full sm:w-2/3 px-4 py-2 border rounded shadow-sm"
-    />
-    <button 
-      @click="fetchReviewsByKeywords"
-      :disabled="loadingKeywords"
-      class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-    >
-      {{ loadingKeywords ? 'Buscando...' : 'Buscar' }}
-    </button>
-  </div>
+      <div class="flex flex-col sm:flex-row gap-2 mb-4">
+        <input 
+          v-model="keywordInput"
+          type="text"
+          placeholder="Ej: demora error"
+          class="w-full sm:w-2/3 px-4 py-2 border rounded shadow-sm"
+        />
+        <button 
+          @click="fetchReviewsByKeywords"
+          :disabled="loadingKeywords"
+          class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+        >
+          {{ loadingKeywords ? 'Buscando...' : 'Buscar' }}
+        </button>
+      </div>
 
-  <div v-if="keywordError" class="text-red-500">{{ keywordError }}</div>
+      <div v-if="keywordError" class="text-red-500">{{ keywordError }}</div>
 
-  <div v-if="loadingKeywords" class="text-gray-500">Buscando opiniones...</div>
+      <div v-if="loadingKeywords" class="text-gray-500">Buscando opiniones...</div>
 
-  <div v-else-if="keywordResults.length > 0">
-    <ul class="divide-y divide-gray-200">
-      <li v-for="review in keywordResults" :key="review.reviewId" class="py-2">
-        <p class="text-sm text-gray-800"><strong>Comentario:</strong> {{ review.comment }}</p>
-        <p class="text-sm text-gray-500">
-          <strong>Rating:</strong> {{ review.rating }} ★
-          <span class="ml-4"><strong>Fecha:</strong> {{ new Date(review.date).toLocaleString() }}</span>
-        </p>
-      </li>
-    </ul>
-  </div>
+      <div v-else-if="keywordResults.length > 0">
+        <ul class="divide-y divide-gray-200">
+          <li v-for="review in keywordResults" :key="review.reviewId" class="py-2">
+            <p class="text-sm text-gray-800"><strong>Comentario:</strong> {{ review.comment }}</p>
+            <p class="text-sm text-gray-500">
+              <strong>Rating:</strong> {{ review.rating }} ★
+              <span class="ml-4"><strong>Fecha:</strong> {{ new Date(review.date).toLocaleString() }}</span>
+            </p>
+          </li>
+        </ul>
+      </div>
 
-  <div v-else-if="!loadingKeywords && keywordInput">
-    <p class="text-gray-500 italic">No se encontraron opiniones con esas palabras clave.</p>
-  </div>
-</div>
+      <div v-else-if="!loadingKeywords && keywordInput">
+        <p class="text-gray-500 italic">No se encontraron opiniones con esas palabras clave.</p>
+      </div>
+    </div>
+    <!-- Bloque para pedidos con más de 3 cambios en 10 min -->
+    <div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md mb-6">
+      <h2 class="text-xl font-bold mb-2">Pedidos con Cambios Rápidos de Estado</h2>
+
+      <button 
+        class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 mb-4"
+        @click="fetchRapidChangeOrders"
+        :disabled="loadingRapidChanges"
+      >
+        {{ loadingRapidChanges ? 'Cargando...' : 'Obtener Pedidos' }}
+      </button>
+
+      <div v-if="rapidChangesError" class="text-red-500">{{ rapidChangesError }}</div>
+
+      <div v-if="loadingRapidChanges" class="text-gray-500">Cargando datos...</div>
+
+      <div v-else-if="rapidChangeOrders.length > 0">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID Pedido</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Cambios</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inicio</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fin</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="order in rapidChangeOrders" :key="order.orderId">
+              <td class="px-6 py-4 whitespace-nowrap">{{ order.orderId }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ order.changeCount }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ new Date(order.firstChange).toLocaleString() }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ new Date(order.lastChange).toLocaleString() }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-else-if="!loadingRapidChanges">
+        <p class="text-gray-500 italic">No se encontraron pedidos con cambios rápidos de estado.</p>
+      </div>
+    </div>
+    <!-- Bloque para rutas más frecuentes de repartidores -->
+    <div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md mb-6">
+      <h2 class="text-xl font-bold mb-2">Ubicaciones Frecuentes de Repartidores (últimos 7 días)</h2>
+
+      <button 
+        class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 mb-4"
+        @click="fetchFrequentLocations"
+        :disabled="loadingFrequentLocations"
+      >
+        {{ loadingFrequentLocations ? 'Cargando...' : 'Obtener Ubicaciones' }}
+      </button>
+
+      <div v-if="frequentLocationsError" class="text-red-500">{{ frequentLocationsError }}</div>
+
+      <div v-if="loadingFrequentLocations" class="text-gray-500">Cargando ubicaciones...</div>
+
+      <div v-else-if="frequentLocations.length > 0">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID Repartidor</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ubicación (Lng, Lat)</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="(loc, index) in frequentLocations" :key="index">
+              <td class="px-6 py-4 whitespace-nowrap">{{ loc.dealerId }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                [{{ loc.location[0].toFixed(5) }}, {{ loc.location[1].toFixed(5) }}]
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ loc.count }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-else-if="!loadingFrequentLocations">
+        <p class="text-gray-500 italic">No se encontraron ubicaciones frecuentes.</p>
+      </div>
+    </div>
+
   </div>
 </template>
 
