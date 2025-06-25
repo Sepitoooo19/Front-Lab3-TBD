@@ -194,27 +194,33 @@ export const getProductsByOrderId = async (orderId: number): Promise<Product[]> 
   return await response.json();
 };
 
-// Función para crear un pedido
-// Entrada : objeto del pedido, lista de ids de productos y token de autenticación
-// Salida : pedido creado
-export const createOrder = async (order: { orderDate: string; status: string }, productIds: string): Promise<void> => {
-  const token = localStorage.getItem('jwt'); // Obtén el token del localStorage
+export const createOrder = async (
+  order: { orderDate: string; status: string },
+  productIds: number[]
+): Promise<void> => {
+  const token = localStorage.getItem('jwt');
 
   if (!token) {
     throw new Error('No se encontró el token de autenticación');
   }
 
-  const response = await fetch(`${config.public.apiBase}/orders/create?productIds=${productIds}`, {
+  // Construir query param para los IDs
+  const query = new URLSearchParams();
+  productIds.forEach((id) => query.append('productIds', id.toString()));
+
+  const response = await fetch(`${config.public.apiBase}/orders/create?${query.toString()}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`, // Incluye el token en el encabezado
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(order), // Enviar el cuerpo de la orden
+    body: JSON.stringify(order), // solo el objeto `order`, ya que el backend lo espera como @RequestBody
   });
 
   if (!response.ok) {
-    throw new Error('Error al crear el pedido');
+    const errorText = await response.text();
+    console.error('Error del servidor:', errorText);
+    throw new Error('Error al crear el pedido: ' + errorText);
   }
 };
 

@@ -2,14 +2,22 @@
 <script setup lang="ts">
 // Importaciones necesarias
 import { ref } from 'vue';
-import { getAverageRatingWithCompanyName } from '~/services/noSqlService';
-import type { AverageRatingWithNameProjection } from '~/types/types';
+import { getAverageRatingWithCompanyName, searchCustomerReviewsByKeywords, getOrdersWithRapidChanges   } from '~/services/noSqlService';
+import type { AverageRatingWithNameProjection, CustomerReviewDocument, RapidChangeOrderDTO  } from '~/types/types';
 
 // Datos reactivos
 const averageRatings = ref<AverageRatingWithNameProjection[]>([]);
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 
+const keywordInput = ref('');
+const keywordResults = ref<CustomerReviewDocument[]>([]);
+const loadingKeywords = ref(false);
+const keywordError = ref<string | null>(null);
+
+const rapidChangeOrders = ref<RapidChangeOrderDTO[]>([]);
+const loadingRapidChanges = ref(false);
+const rapidChangesError = ref<string | null>(null);
 // Función para obtener los promedios de puntuación
 const fetchAverageRatings = async () => {
   try {
@@ -22,6 +30,26 @@ const fetchAverageRatings = async () => {
     errorMessage.value = 'Hubo un error al cargar los promedios de puntuación.';
   } finally {
     loading.value = false;
+  }
+};
+
+const fetchReviewsByKeywords = async () => {
+  if (!keywordInput.value.trim()) {
+    keywordError.value = 'Ingresa al menos una palabra clave';
+    keywordResults.value = [];
+    return;
+  }
+
+  try {
+    loadingKeywords.value = true;
+    keywordError.value = null;
+    const keywords = keywordInput.value.trim().split(/\s+/);
+    keywordResults.value = await searchCustomerReviewsByKeywords(keywords);
+  } catch (error) {
+    console.error('Error al buscar opiniones por palabra clave:', error);
+    keywordError.value = 'Hubo un error al buscar las opiniones.';
+  } finally {
+    loadingKeywords.value = false;
   }
 };
 
@@ -90,15 +118,46 @@ definePageMeta({
     >
       {{ loading ? 'Cargando...' : 'Obtener Promedios' }}
     </button>
+    <!-- Bloque para búsqueda de opiniones por palabra clave -->
+<div class="border border-gray-300 rounded-lg p-4 bg-white shadow-md mb-6">
+  <h2 class="text-xl font-bold mb-2">Buscar Opiniones por Palabra Clave</h2>
 
-    <!-- Opcional: Gráfico de visualización -->
-    <div v-if="averageRatings.length > 0" class="border border-gray-300 rounded-lg p-4 bg-white shadow-md mb-4">
-      <h2 class="text-xl font-bold mb-2">Visualización Gráfica</h2>
-      <div class="h-64">
-        <!-- Aquí podrías integrar un componente de gráfico -->
-        <p class="text-gray-500 italic">(Gráfico de barras o estrellas podría ir aquí)</p>
-      </div>
-    </div>
+  <div class="flex flex-col sm:flex-row gap-2 mb-4">
+    <input 
+      v-model="keywordInput"
+      type="text"
+      placeholder="Ej: demora error"
+      class="w-full sm:w-2/3 px-4 py-2 border rounded shadow-sm"
+    />
+    <button 
+      @click="fetchReviewsByKeywords"
+      :disabled="loadingKeywords"
+      class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+    >
+      {{ loadingKeywords ? 'Buscando...' : 'Buscar' }}
+    </button>
+  </div>
+
+  <div v-if="keywordError" class="text-red-500">{{ keywordError }}</div>
+
+  <div v-if="loadingKeywords" class="text-gray-500">Buscando opiniones...</div>
+
+  <div v-else-if="keywordResults.length > 0">
+    <ul class="divide-y divide-gray-200">
+      <li v-for="review in keywordResults" :key="review.reviewId" class="py-2">
+        <p class="text-sm text-gray-800"><strong>Comentario:</strong> {{ review.comment }}</p>
+        <p class="text-sm text-gray-500">
+          <strong>Rating:</strong> {{ review.rating }} ★
+          <span class="ml-4"><strong>Fecha:</strong> {{ new Date(review.date).toLocaleString() }}</span>
+        </p>
+      </li>
+    </ul>
+  </div>
+
+  <div v-else-if="!loadingKeywords && keywordInput">
+    <p class="text-gray-500 italic">No se encontraron opiniones con esas palabras clave.</p>
+  </div>
+</div>
   </div>
 </template>
 

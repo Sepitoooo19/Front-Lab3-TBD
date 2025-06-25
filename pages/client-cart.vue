@@ -167,7 +167,7 @@ const createOrder = async () => {
     });
 
     // Crear la orden
-    const productIds = cartStore.products.map((product) => product.id).join(',');
+    const productIds = cartStore.products.map((product) => product.id); // Mantener como arreglo de number
     const order = {
       orderDate: new Date().toISOString(),
       status: isUrgent.value ? "URGENTE" : "PENDIENTE",

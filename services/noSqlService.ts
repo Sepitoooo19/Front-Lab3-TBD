@@ -1,4 +1,4 @@
-import type { AverageRatingWithNameProjection } from '~/types/types';
+import type { AverageRatingWithNameProjection, CustomerReviewDocument, RapidChangeOrderDTO  } from '~/types/types';
 
 export const getAverageRatingWithCompanyName = async (): Promise<AverageRatingWithNameProjection[]> => {
   const config = useRuntimeConfig();
@@ -10,6 +10,41 @@ export const getAverageRatingWithCompanyName = async (): Promise<AverageRatingWi
 
   if (!response.ok) {
     throw new Error('Error al obtener los promedios de puntuación');
+  }
+
+  return await response.json();
+};
+
+
+export const searchCustomerReviewsByKeywords = async (keywords: string[]): Promise<CustomerReviewDocument[]> => {
+  const config = useRuntimeConfig();
+  const query = new URLSearchParams();
+  keywords.forEach(word => query.append('keywords', word));
+
+  const response = await fetch(`${config.public.apiBase}/documents/customer-review/search?${query.toString()}`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Error al buscar opiniones por palabra clave');
+  }
+
+  return await response.json();
+};
+
+export const getOrdersWithRapidChanges = async (): Promise<RapidChangeOrderDTO[]> => {
+  const config = useRuntimeConfig();
+
+  const response = await fetch(`${config.public.apiBase}/documents/order-log/rapid-change-details`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('jwt')}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error('Error al obtener los pedidos con cambios rápidos');
   }
 
   return await response.json();

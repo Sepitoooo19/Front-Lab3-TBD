@@ -190,3 +190,20 @@ export interface AverageRatingWithNameProjection {
   companyName: string;
   averageRating: number;
 }
+
+export interface CustomerReviewDocument {
+  id: string;
+  reviewId: number;
+  comment: string;
+  rating: number;
+  date: string; // o Date si planeas transformarlo directamente
+  clientId: number;
+  companyId: number;
+}
+
+export interface RapidChangeOrderDTO {
+  orderId: number;
+  totalChanges: number;
+  firstChange: string; // o Date si haces el parse
+  lastChange: string;
+}
