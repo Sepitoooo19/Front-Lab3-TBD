@@ -25,7 +25,8 @@ export default defineNuxtRouteMiddleware((to, from) => {
       '/map-querys',
       '/admin/spatial-queries',
       '/admin/spatial-queries/*',
-      "/nosqlQueries"],
+      "/nosqlQueries",
+      "/migration"],
     DEALER: ['/dealer/dashboard', '/unassigned-orders-dealer', '/profile-dealer'],
   };
 

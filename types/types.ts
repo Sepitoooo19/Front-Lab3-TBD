@@ -227,3 +227,124 @@ export interface ReviewHourStats {
   count: number;
   avgRating: number;
 }
+
+export interface CustomerReview {
+  reviewId?: number;
+  comment: string;
+  rating: number;
+  date?: string;
+  clientId: number;
+  companyId: number;
+}
+
+
+
+// Tipo para la respuesta de calificación
+export interface CompanyRatingResponse {
+  id: string
+  reviewId: number
+  companyId: number
+  companyName: string
+  rating: number
+  comment: string
+  date: string
+  clientName: string
+}
+
+// Tipo para estadísticas de calificación
+export interface CompanyRatingStats {
+  companyId: number
+  companyName: string
+  averageRating: number
+  totalRatings: number
+  ratingDistribution: {
+    '1': number
+    '2': number
+    '3': number
+    '4': number
+    '5': number
+  }
+}
+
+// Tipo para el resumen de calificaciones de un cliente
+export interface ClientRatingSummary {
+  clientId: number
+  totalRatingsGiven: number
+  averageRatingGiven: number
+  lastRatingDate?: string
+}
+
+// Tipo para la vista previa de calificación
+export interface RatingPreview {
+  companyId: number
+  companyName: string
+  companyType: string
+  canRate: boolean
+  lastRating?: {
+    rating: number
+    date: string
+  }
+}
+
+// Tipo para el componente de selección de estrellas
+export interface StarRatingSelection {
+  value: number
+  label: string
+  icon: string
+  color: string
+}
+
+// Tipo para el payload de búsqueda de calificaciones
+export interface RatingSearchCriteria {
+  companyId?: number
+  clientId?: number
+  minRating?: number
+  maxRating?: number
+  startDate?: string
+  endDate?: string
+  containsText?: string
+}
+
+// Tipo para la respuesta paginada de calificaciones
+export interface PaginatedRatings {
+  items: CompanyRatingResponse[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+
+export interface CompanyRatingRequest {
+  companyId: number
+  rating: number
+  comment: string
+  clientId: number
+}
+
+export interface CompanyRatingResponse {
+  id: string
+  reviewId: number
+  companyId: number
+  rating: number
+  comment: string
+  date: string
+}
+
+export interface PaginatedRatings {
+  items: CompanyRatingResponse[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface RatingStats {
+  averageRating: number
+  totalRatings: number
+  ratingDistribution: {
+    '1': number
+    '2': number
+    '3': number
+    '4': number
+    '5': number
+  }
+}

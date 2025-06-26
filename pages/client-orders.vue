@@ -8,6 +8,7 @@ import { getOrdersByClient, getProductsByOrderId, getClientAddress } from '~/ser
 import { getOrderDetailsByOrderId } from '~/services/orderDetailsService';
 import { getDealerNameById } from '~/services/dealerService'; // Servicio para obtener el nombre del repartidor
 
+
 // Importa los servicios necesarios
 const orders = ref<Order[]>([]); // Lista de órdenes del cliente
 const products = ref<Product[]>([]); // Lista de productos de la orden seleccionada
@@ -15,6 +16,15 @@ const orderDetails = ref<OrderDetails | null>(null); // Detalles de la orden sel
 const showModal = ref(false); // Controla la visibilidad del modal de productos
 const showDetailsModal = ref(false); // Controla la visibilidad del modal de detalles
 const selectedOrderId = ref<number | null>(null); // ID del pedido seleccionado
+
+const showCompanyReviewModal = ref(false);
+const companyReview = ref({
+  comment: '',
+  rating: 5,
+  clientId: 0, // Se establecerá al abrir el modal
+  companyId: 0 // Se establecerá al abrir el modal
+});
+
 
 // Carga las órdenes del cliente autenticado
 // Método: getOClientAddress, getOrdersByClient y getDealerNameById
@@ -163,6 +173,12 @@ definePageMeta({
               class="bg-yellow-500 text-white px-3 py-1 rounded mt-2 hover:bg-yellow-600"
             >
               Calificar Repartidor
+            </button>
+            <button
+              @click="$router.push('/rate-company')"
+              class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+            >
+              Calificar una empresa
             </button>
           </td>
         </tr>
