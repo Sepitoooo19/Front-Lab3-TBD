@@ -34,7 +34,7 @@ svg {
 
 /* Quitar display: flex, justify-content, align-items, padding del body */
 body {
-  background: linear-gradient(135deg, #a8e6cf, #dcedc1);
+  background: #f0f4f8;
   font-family: 'Montserrat', sans-serif;
   min-height: 100vh;
   margin: 0;

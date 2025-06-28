@@ -376,7 +376,10 @@ definePageMeta({
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="(stat, index) in hourlyStats" :key="index">
-              <td class="px-6 py-2">{{ stat._id }}:00 - {{ stat._id + 1 }}:00</td>
+              <!-- Ajustar la hora a la zona horaria local -->
+              <td class="px-6 py-2">
+                {{ (stat._id - 4 + 24) % 24 }}:00 - {{ ((stat._id - 4 + 24) % 24 + 1) % 24 }}:00
+              </td>
               <td class="px-6 py-2">{{ stat.count }}</td>
               <td class="px-6 py-2">
                 <span v-if="typeof stat.avgRating === 'number'">

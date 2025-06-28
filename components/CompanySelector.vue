@@ -3,6 +3,7 @@ import { getAllCompanies } from '~/services/companyService'
 
 const props = defineProps<{
   modelValue: number | null
+  disabled?: boolean
 }>()
 
 const emit = defineEmits(['update:modelValue'])
@@ -38,9 +39,9 @@ onMounted(() => {
       :value="modelValue"
       @change="emit('update:modelValue', Number(($event.target as HTMLSelectElement).value))"
       class="w-full p-2 border rounded"
-      :disabled="isLoading"
+      :disabled="isLoading || props.disabled"
     >
-      <option :value="null" disabled>Seleccione una empresa</option>
+      <option :value="null" :disabled="isLoading || props.disabled">Seleccione una empresa</option>
       <option 
         v-for="company in companies" 
         :key="company.id" 

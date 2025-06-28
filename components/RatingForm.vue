@@ -42,15 +42,15 @@ const submit = async () => {
   <div class="rating-form space-y-4">
     <div>
       <label class="block mb-2 font-medium">Calificación:</label>
-      <div class="flex space-x-2">
+      <div class="flex justify-center space-x-2">
         <button
           v-for="star in 5"
           :key="star"
           @click="rating = star"
           class="w-10 h-10 rounded-full flex items-center justify-center"
           :class="{
-            'bg-yellow-400 text-white': star <= rating,
-            'bg-gray-200 text-gray-700': star > rating
+            'bg-yellow-400 text-white': rating === star,
+            'bg-gray-200 text-gray-700 hover:bg-gray-300': rating !== star
           }"
         >
           {{ star }}

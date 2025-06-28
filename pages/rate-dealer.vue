@@ -1,11 +1,14 @@
 <!-- page para calificar al repartidor-->
 
 <script setup lang="ts">
-// Importa las dependencias necesarias
+definePageMeta({
+  layout: 'client'
+})
+
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { addRating } from '~/services/ratingService';
-import { getDealerNameById } from '~/services/dealerService'; // Importa el servicio
+import { getDealerNameById } from '~/services/dealerService';
 
 // Const reactivas
 const router = useRouter();
@@ -15,6 +18,7 @@ const dealerId = ref<number | null>(route.query.dealerId ? parseInt(route.query.
 const orderId = ref<number | null>(route.query.orderId ? parseInt(route.query.orderId as string) : null);
 const clientId = ref<number | null>(route.query.clientId ? parseInt(route.query.clientId as string) : null);
 const dealerName = ref<string | null>(null); // Almacena el nombre del repartidor
+const isSubmitted = ref(false);
 
 // Verifica si los parámetros necesarios están presentes
 if (!dealerId.value || !orderId.value || !clientId.value) {
@@ -63,7 +67,7 @@ const submitRating = async () => {
       dealerId: dealerId.value!,
       orderId: orderId.value!,
     });
-    router.push('/client-orders'); // Redirige a la lista de órdenes después de guardar
+    isSubmitted.value = true;
   } catch (error) {
     console.error('Error al guardar la calificación:', error);
     errorMessage.value = 'Hubo un error al guardar la calificación.';
@@ -81,15 +85,21 @@ const submitRating = async () => {
       <p><strong>ID del Pedido:</strong> {{ orderId }}</p>
 
       <div class="mt-4">
-        <label for="rating" class="block font-bold mb-2">Calificación (1-5):</label>
-        <input
-          id="rating"
-          type="number"
-          v-model="rating"
-          min="1"
-          max="5"
-          class="border border-gray-300 rounded px-4 py-2 w-full"
-        />
+        <label class="block font-bold mb-2">Calificación:</label>
+        <div class="flex justify-center space-x-2">
+          <button
+            v-for="star in 5"
+            :key="star"
+            @click="rating = star"
+            class="w-10 h-10 rounded-full flex items-center justify-center"
+            :class="{
+              'bg-yellow-400 text-white': rating === star,
+              'bg-gray-200 text-gray-700 hover:bg-gray-300': rating !== star
+            }"
+          >
+            {{ star }}
+          </button>
+        </div>
       </div>
 
       <div class="mt-4">
@@ -104,12 +114,26 @@ const submitRating = async () => {
 
       <div v-if="errorMessage" class="text-red-500 mt-4">{{ errorMessage }}</div>
 
-      <button
-        @click="submitRating"
-        class="bg-blue-500 text-white px-4 py-2 rounded mt-4 hover:bg-blue-600"
-      >
-        Guardar Calificación
-      </button>
+      <div v-if="!isSubmitted">
+        <button
+          @click="submitRating"
+          class="bg-blue-500 text-white px-4 py-2 rounded mt-4 hover:bg-blue-600"
+        >
+          Guardar Calificación
+        </button>
+      </div>
+      
+      <div v-else class="text-center py-8">
+        <div class="text-green-500 text-5xl mb-4">✓</div>
+        <h2 class="text-xl font-semibold mb-2">¡Calificación enviada!</h2>
+        <p class="mb-4">Gracias por tu opinión.</p>
+        <button
+          @click="router.push('/client-orders')"
+          class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Volver a mis pedidos
+        </button>
+      </div>
     </div>
   </div>
 </template>
