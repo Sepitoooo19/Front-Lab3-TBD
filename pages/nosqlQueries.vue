@@ -378,7 +378,7 @@ definePageMeta({
             <tr v-for="(stat, index) in hourlyStats" :key="index">
               <!-- Ajustar la hora a la zona horaria local -->
               <td class="px-6 py-2">
-                {{ (stat._id - 4 + 24) % 24 }}:00 - {{ ((stat._id - 4 + 24) % 24 + 1) % 24 }}:00
+                {{ (stat._id) % 24 }}:00 - {{ ((stat._id ) % 24 + 1) % 24 }}:00
               </td>
               <td class="px-6 py-2">{{ stat.count }}</td>
               <td class="px-6 py-2">
